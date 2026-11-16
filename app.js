@@ -1016,11 +1016,35 @@
   }
 
   function fileNameFor(current, tail = "") {
-    const safe = titleOf(current).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const safe = titleOf(current).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr")
+      .replace(/[^a-z0-9]+/g, "-").slice(0, 180).replace(/^-+|-+$/g, "");
     return `${safe || "storyboard"}${tail}.txt`;
   }
 
-  function downloadFile(blob, filename) {
+  async function downloadFile(blob, filename) {
+    const android = window.StoryboardAndroid;
+    if (android) {
+      const type = blob.type.split(";")[0];
+      if (!android.beginExport(filename, type)) throw new Error("Téléchargement indisponible");
+      try {
+        const chunkSize = 256 * 1024;
+        for (let start = 0; start < blob.size; start += chunkSize) {
+          const chunk = blob.slice(start, start + chunkSize);
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(chunk);
+          });
+          if (!android.appendExport(dataUrl.slice(dataUrl.indexOf(",") + 1))) throw new Error("Écriture interrompue");
+        }
+        if (!android.finishExport()) throw new Error("Impossible d’enregistrer le fichier");
+      } catch (error) {
+        android.abortExport();
+        throw error;
+      }
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const link = Object.assign(document.createElement("a"), {href: url, download: filename});
     document.body.append(link);
@@ -1030,7 +1054,7 @@
   }
 
   function downloadText(content, filename) {
-    downloadFile(new Blob([content], {type: "text/plain;charset=utf-8"}), filename);
+    return downloadFile(new Blob([content], {type: "text/plain;charset=utf-8"}), filename);
   }
 
   async function downloadBoardImage(buttonElement) {
@@ -1042,7 +1066,7 @@
     try {
       const image = await BoardImage.render(current, board);
       if (!image) throw new Error("PNG indisponible");
-      downloadFile(image, fileNameFor(current, "-planche-" + number(board.number)).replace(/\.txt$/, ".png"));
+      await downloadFile(image, fileNameFor(current, "-planche-" + number(board.number)).replace(/\.txt$/, ".png"));
       toast("Planche PNG exportée");
     } catch {
       toast("Impossible d’exporter cette planche en PNG.", "info");
@@ -1059,22 +1083,28 @@
       const selected = boards[Math.min(boardIndex, boards.length - 1)];
       const prompts = (all ? boards : [selected]).map(board => engine.buildBoardPrompt(current, board, boards.length));
       const suffix = all ? "-planches" : "-planche-" + number(selected.number);
-      downloadText(prompts.join("\n\n" + "─".repeat(52) + "\n\n"), fileNameFor(current, suffix));
-      toast(all ? "Prompts des planches exportés" : "Prompt de la planche exporté");
+      exportPrompts(prompts, fileNameFor(current, suffix), all ? "Prompts des planches exportés" : "Prompt de la planche exporté");
       return;
     }
     if (all) {
       const prompts = current.scenes.flatMap((scene, index) => scene.shots.map((shot, shotIndex) => engine.buildPrompt(current, scene, shot, index + 1, shotIndex + 1)));
       if (!prompts.length) return;
-      downloadText(prompts.join("\n\n" + "─".repeat(52) + "\n\n"), fileNameFor(current, "-prompts"));
-      toast("Prompts exportés");
+      exportPrompts(prompts, fileNameFor(current, "-prompts"), "Prompts exportés");
     } else {
       const {scene, shot} = promptSelection();
       if (!shot) return;
       const sceneNumber = current.scenes.indexOf(scene) + 1;
       const shotNumber = scene.shots.indexOf(shot) + 1;
-      downloadText(engine.buildPrompt(current, scene, shot, sceneNumber, shotNumber), fileNameFor(current, `-scene-${number(sceneNumber)}-plan-${number(shotNumber)}`));
-      toast("Prompt exporté");
+      exportPrompts([engine.buildPrompt(current, scene, shot, sceneNumber, shotNumber)], fileNameFor(current, `-scene-${number(sceneNumber)}-plan-${number(shotNumber)}`), "Prompt exporté");
+    }
+  }
+
+  async function exportPrompts(prompts, filename, message) {
+    try {
+      await downloadText(prompts.join("\n\n" + "─".repeat(52) + "\n\n"), filename);
+      toast(message);
+    } catch {
+      toast("Impossible d’exporter le prompt.", "info");
     }
   }
 

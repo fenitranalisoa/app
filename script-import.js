@@ -177,7 +177,7 @@ const ScriptImport = (() => {
   async function readPdf(bytes, progress) {
     await loadVendor("pdf.js");
     const worker = new URL("pdf.worker.js", vendor);
-    if (location.protocol === "file:") await loadVendor("pdf.worker.js");
+    if (!["http:", "https:"].includes(location.protocol)) await loadVendor("pdf.worker.js");
     pdfjsLib.GlobalWorkerOptions.workerSrc = worker.href;
     const task = pdfjsLib.getDocument({
       data: bytes, useWasm: false, isEvalSupported: false, useWorkerFetch: false,

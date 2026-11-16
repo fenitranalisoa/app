@@ -1,0 +1,5 @@
+Ouvrez [Open StoryBoard Studio dans votre navigateur](https://fenitranalisoa.github.io/app/) ou téléchargez la version pour votre appareil. Les trois éditions embarquent les fichiers de l’application et fonctionnent hors ligne. Chaque édition conserve ses propres projets sur l’appareil.
+
+- **Windows x64** — Ouvrez le fichier `.exe` portable. Il utilise Microsoft Edge WebView2 Runtime, présent sur la plupart des PC récents. L’exécutable ne porte pas de signature d’éditeur.
+- **macOS 13 ou ultérieur** — Décompressez le ZIP, puis déplacez `Open StoryBoard Studio.app` dans Applications. L’application fonctionne sur Mac Intel et Apple Silicon. Elle porte une signature locale et n’est pas notariée par Apple.
+- **Android 10 ou ultérieur** — Ouvrez l’APK sur votre téléphone. Utilisez une version à jour d’Android System WebView. Les exports se retrouvent dans **Téléchargements**. Cette première APK utilise une clé de test. Android demande de désinstaller l’ancienne édition si une mise à jour utilise une autre clé.

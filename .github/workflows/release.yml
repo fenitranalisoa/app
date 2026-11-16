@@ -1,0 +1,126 @@
+name: Versions téléchargeables
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version à publier (par exemple v1.0.0)
+        required: true
+        default: v1.0.0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.version }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.number }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - id: version
+        env:
+          RELEASE_TAG: ${{ inputs.version }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[1-9][0-9]{0,2}\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]]
+          printf 'tag=%s\nnumber=%s\n' "$RELEASE_TAG" "${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+      - run: node --test tests/storyboard.test.cjs
+
+  windows:
+    needs: validate
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Compiler l’exécutable Windows
+        shell: pwsh
+        env:
+          STUDIO_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          $assets = Join-Path $env:RUNNER_TEMP storyboard-web.zip
+          python packaging/web_assets.py "$assets"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet publish packaging/windows/OpenStoryboardStudio.csproj -c Release -o native-output "-p:StoryboardAssets=$assets" "-p:Version=$env:STUDIO_VERSION"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Move-Item native-output/OpenStoryboardStudio.exe native-output/Open-StoryBoard-Studio-Windows-x64.exe -ErrorAction Stop
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: windows
+          path: native-output/Open-StoryBoard-Studio-Windows-x64.exe
+          if-no-files-found: error
+          compression-level: 0
+
+  macos:
+    needs: validate
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Créer la version Mac universelle
+        env:
+          STUDIO_VERSION: ${{ needs.validate.outputs.version }}
+        run: bash packaging/macos/build.sh "$STUDIO_VERSION" native-output
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: macos
+          path: native-output/Open-StoryBoard-Studio-macOS.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  android:
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Créer et vérifier l’APK
+        env:
+          STUDIO_VERSION: ${{ needs.validate.outputs.version }}
+        run: bash packaging/android/build.sh "$STUDIO_VERSION" native-output
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: android
+          path: native-output/Open-StoryBoard-Studio-Android.apk
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    needs: [validate, windows, macos, android]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: native-output
+          merge-multiple: true
+      - name: Publier sur GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          for file in Open-StoryBoard-Studio-Windows-x64.exe Open-StoryBoard-Studio-macOS.zip Open-StoryBoard-Studio-Android.apk; do
+            test -s "native-output/$file"
+          done
+          gh release create "$RELEASE_TAG" \
+            native-output/Open-StoryBoard-Studio-Windows-x64.exe \
+            native-output/Open-StoryBoard-Studio-macOS.zip \
+            native-output/Open-StoryBoard-Studio-Android.apk \
+            --target "$GITHUB_SHA" --title "Open StoryBoard Studio $RELEASE_TAG" \
+            --notes-file packaging/release-notes.md

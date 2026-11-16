@@ -4,7 +4,9 @@ Open StoryBoard Studio aide la direction artistique et la réalisation à prépa
 
 ## Ouvrir l’application
 
-Double-cliquez sur `index.html` dans le dossier du projet. L’accueil propose un guide en trois étapes et le projet de démonstration **Le Dernier Métro**.
+[Ouvrir Open StoryBoard Studio](https://fenitranalisoa.github.io/app/) · [Télécharger pour Windows, macOS ou Android](https://github.com/fenitranalisoa/app/releases/latest)
+
+L’accueil propose un guide en trois étapes et le projet de démonstration **Le Dernier Métro**. Vous pouvez aussi double-cliquer sur `index.html` dans une copie locale du projet.
 
 Pour ouvrir l’application depuis un serveur de développement local, exécutez la commande suivante dans ce dossier, puis visitez `http://127.0.0.1:8765`.
 
@@ -12,7 +14,7 @@ Pour ouvrir l’application depuis un serveur de développement local, exécutez
 python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-Les projets et modifications sont enregistrés dans le stockage local du navigateur. Utilisez la même adresse et le même navigateur pour les retrouver.
+Les projets et modifications sont enregistrés localement. Retrouvez-les dans l’édition utilisée pour les créer, ou dans le même navigateur à la même adresse pour l’édition web.
 
 ## Du scénario aux prompts
 
@@ -48,9 +50,9 @@ PLAN 1 — La découverte (00:08–00:12)
 Action : Noé découvre l’enveloppe ouverte.
 ```
 
-## Publier sur GitHub Pages
+## Publication
 
-Ajoutez les fichiers de l’application à un dépôt GitHub. Dans **Settings → Pages**, choisissez **Deploy from a branch**, puis la branche `main` et le dossier `/(root)`. Une fois le déploiement terminé, **Visit site** ouvre le lien public à partager.
+GitHub Pages sert les fichiers de la branche `main` à la racine. Pour construire les fichiers téléchargeables, lancez **Actions → Versions téléchargeables → Run workflow** avec un nouveau numéro de version. Les trois fichiers signés ou compilés sont regroupés dans une publication GitHub Releases.
 
 ## Bibliothèques d’import
 
