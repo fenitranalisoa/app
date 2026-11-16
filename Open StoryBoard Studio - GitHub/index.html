@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151219">
+  <meta name="description" content="Préparez vos tournages avec un storyboard éditable et des prompts par plan.">
+  <title>Open StoryBoard Studio - Par Fenitra Rabefaritra</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+  <script src="storyboard.js" defer></script>
+  <script src="script-import.js" defer></script>
+  <script src="script-preparation.js" defer></script>
+  <script src="project-ideas.js" defer></script>
+  <script src="board-image.js" defer></script>
+  <script src="demo.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <button class="sidebar-scrim" type="button" data-action="close-sidebar" aria-label="Fermer la navigation" hidden></button>
+    <aside class="sidebar" id="sidebar" aria-label="Navigation principale"></aside>
+    <div class="workspace">
+      <header class="topbar" id="topbar"></header>
+      <main id="view" class="main" tabindex="-1"></main>
+    </div>
+  </div>
+  <dialog id="dialog" class="dialog"></dialog>
+  <dialog id="confirm-dialog" class="dialog confirm-dialog"></dialog>
+  <div class="toast-stack" id="toasts" aria-live="polite" aria-atomic="false"></div>
+  <noscript>Activez JavaScript dans votre navigateur pour utiliser Open StoryBoard Studio.</noscript>
+</body>
+</html>
