@@ -22,7 +22,7 @@ for arch in arm64 x86_64; do
 done
 executable="$bundle/Contents/MacOS/OpenStoryboardStudio"
 xcrun lipo -create "$work/studio-arm64" "$work/studio-x86_64" -output "$executable"
-xcrun lipo -verify_arch arm64 x86_64 "$executable"
+xcrun lipo "$executable" -verify_arch arm64 x86_64
 codesign --sign - --force "$bundle"
 codesign --verify --strict "$bundle"
 ditto -c -k --keepParent "$bundle" "$output/Open-StoryBoard-Studio-macOS.zip"
